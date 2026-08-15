@@ -2,7 +2,8 @@ version: 0.2
 
 env:
   variables:
-    IMAGE_REPO_NAME: "product-service"
+    # Ditambahkan kata "spring/" di depannya agar sama persis dengan dashboard AWS Anda
+    IMAGE_REPO_NAME: "spring/product-service"
     IMAGE_TAG: "latest"
 
 phases:
@@ -11,10 +12,8 @@ phases:
       - echo "Logging into Amazon ECR Public..."
       - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
       - echo "Fetching the exact ECR Public registry alias assigned to this account..."
-      - # Mengambil token alias asli dari akun AWS Anda secara otomatis
-        export REGISTRY_ALIAS=$(aws ecr-public describe-registries --region us-east-1 --query "registries[0].aliases[?primaryRegistryAlias==\`true\`].name" --output text)
-      - # Dibungkus kutip dua agar tanda titik dua (:) tidak merusak format YAML CodeBuild
-        echo "Your official AWS ECR Public Registry Alias is $REGISTRY_ALIAS"
+      - export REGISTRY_ALIAS=$(aws ecr-public describe-registries --region us-east-1 --query "registries.aliases[?primaryRegistryAlias==\`true\`].name" --output text)
+      - echo "Your official AWS ECR Public Registry Alias is $REGISTRY_ALIAS"
   build:
     commands:
       - echo "Build started on `date`"
