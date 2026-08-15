@@ -1,0 +1,32 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_ACCOUNT_ID: "132851953521"
+    AWS_REGION: "ap-southeast-1"
+    IMAGE_TAG: "latest"
+    PUBLIC_REGISTRY_ALIAS: "spring"
+    IMAGE_REPO_NAME: "product-service"
+    IMAGE_TAG: "latest"
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging into Amazon ECR Public...
+      - # Always use us-east-1 for ECR Public login authentication as mandated by AWS
+        aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Compiling Spring Boot application...
+      - chmod +x mvnw # Ensures CodeBuild has execution permission for the Maven wrapper
+      - ./mvnw clean package -DskipTests
+      - echo Building the Docker image...
+      - docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG .
+      - echo Tagging the Docker image for ECR Public...
+      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG public.ecr.aws/$PUBLIC_REGISTRY_ALIAS/$IMAGE_REPO_NAME:$IMAGE_TAG
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker image to AWS ECR Public...
+      - docker push public.ecr.aws/$PUBLIC_REGISTRY_ALIAS/$IMAGE_REPO_NAME:$IMAGE_TAG
