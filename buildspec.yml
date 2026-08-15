@@ -2,16 +2,17 @@ version: 0.2
 
 env:
   variables:
-    # ID Alias asli akun Anda yang sudah diverifikasi oleh AWS di log sebelumnya
-    REGISTRY_ALIAS: "k8i7x3f7"
+    AWS_ACCOUNT_ID: "132851953521"
+    AWS_REGION: "ap-southeast-1"
     IMAGE_REPO_NAME: "spring/product-service"
     IMAGE_TAG: "latest"
 
 phases:
   pre_build:
     commands:
-      - echo "Logging into Amazon ECR Public..."
-      - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+      - echo "Logging into Amazon ECR Private..."
+      - # Menggunakan region Singapura sesuai lokasi repositori private Anda
+        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_://amazonaws.com
   build:
     commands:
       - echo "Build started on `date`"
@@ -19,10 +20,17 @@ phases:
       - mvn clean package -DskipTests
       - echo "Building the Docker image..."
       - docker build -t spring-app:latest .
-      - echo "Tagging the Docker image for ECR Public..."
-      - docker tag spring-app:latest public.ecr.aws/$REGISTRY_ALIAS/$IMAGE_REPO_NAME:$IMAGE_TAG
+      - echo "Tagging the Docker image for ECR Private..."
+      - docker tag spring-app:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_://amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
   post_build:
     commands:
       - echo "Build completed on `date`"
-      - echo "Pushing the Docker image to AWS ECR Public..."
-      - docker push public.ecr.aws/$REGISTRY_ALIAS/$IMAGE_REPO_NAME:$IMAGE_TAG
+      - echo "Pushing the Docker image to AWS ECR Private..."
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_://amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
+      - # Membuat file manifest untuk sinkronisasi otomatis ke AWS ECS nanti
+        echo "[{\"name\":\"product-service-container\",\"imageUri\":\"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_://amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG\"}]" > imagedefinitions.json
+
+artifacts:
+  files:
+    - appspec.yaml
+    - imagedefinitions.json
