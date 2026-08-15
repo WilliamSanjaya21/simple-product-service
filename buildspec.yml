@@ -2,7 +2,8 @@ version: 0.2
 
 env:
   variables:
-    # Ditambahkan kata "spring/" di depannya agar sama persis dengan dashboard AWS Anda
+    # ID Alias asli akun Anda yang sudah diverifikasi oleh AWS di log sebelumnya
+    REGISTRY_ALIAS: "k8i7x3f7"
     IMAGE_REPO_NAME: "spring/product-service"
     IMAGE_TAG: "latest"
 
@@ -11,18 +12,15 @@ phases:
     commands:
       - echo "Logging into Amazon ECR Public..."
       - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
-      - echo "Fetching the exact ECR Public registry alias assigned to this account..."
-      - export REGISTRY_ALIAS=$(aws ecr-public describe-registries --region us-east-1 --query "registries.aliases[?primaryRegistryAlias==\`true\`].name" --output text)
-      - echo "Your official AWS ECR Public Registry Alias is $REGISTRY_ALIAS"
   build:
     commands:
       - echo "Build started on `date`"
       - echo "Compiling Spring Boot application..."
       - mvn clean package -DskipTests
       - echo "Building the Docker image..."
-      - docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG .
+      - docker build -t spring-app:latest .
       - echo "Tagging the Docker image for ECR Public..."
-      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG public.ecr.aws/$REGISTRY_ALIAS/$IMAGE_REPO_NAME:$IMAGE_TAG
+      - docker tag spring-app:latest public.ecr.aws/$REGISTRY_ALIAS/$IMAGE_REPO_NAME:$IMAGE_TAG
   post_build:
     commands:
       - echo "Build completed on `date`"
