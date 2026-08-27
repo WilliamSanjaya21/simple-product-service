@@ -15,6 +15,7 @@ import com.learn.simple_product_service.repository.ProductRepository;
 
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -170,6 +171,40 @@ public class S3StorageService {
                 s3Presigner.presignGetObject(presignRequest);
 
         return presignedRequest.url().toString();
+    }
+    
+    public void deleteImage(UUID productId, String imageUrl) {
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Product not found: " + productId
+                        )
+                );
+
+        // Make sure this image actually belongs to this product
+        if (!product.getImageUrls().contains(imageUrl)) {
+            throw new RuntimeException(
+                    "Image does not belong to product: " + productId
+            );
+        }
+
+        // Convert S3 URL -> object key
+        String objectKey = extractObjectKey(imageUrl);
+
+        // Delete from S3
+        DeleteObjectRequest deleteRequest =
+                DeleteObjectRequest.builder()
+                        .bucket(bucketName)
+                        .key(objectKey)
+                        .build();
+
+        s3Client.deleteObject(deleteRequest);
+
+        // Remove URL from database
+        product.getImageUrls().remove(imageUrl);
+
+        productRepository.save(product);
     }
 
     private String buildObjectKey(

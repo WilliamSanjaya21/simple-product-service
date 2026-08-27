@@ -8,14 +8,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.learn.simple_product_service.model.S3ProductRequestDTO;
-import com.learn.simple_product_service.service.ProductService;
 import com.learn.simple_product_service.service.S3StorageService;
 
 import lombok.RequiredArgsConstructor;
@@ -83,5 +80,30 @@ public class S3StorageController {
                 .status(HttpStatus.FOUND)
                 .location(URI.create(presignedUrl))
                 .build();
+    }
+    
+    @PostMapping("/delete/{productId}")
+    public ResponseEntity<String> downloadImage(
+    		@PathVariable UUID productId,
+            @RequestParam("url") String imageUrl) {
+    	try {
+    		
+    		s3StorageService.deleteImage(productId,imageUrl);
+
+            return ResponseEntity.ok().body("Delete succeed");
+    	} catch (Exception e) {
+    		
+    		log.error(
+                    "Failed to delete image for product {}",
+                    productId,
+                    e
+            );
+
+            throw new RuntimeException(
+                    "Failed to delete image: " + e.getMessage(),
+                    e
+            );
+    	}
+        
     }
 }
