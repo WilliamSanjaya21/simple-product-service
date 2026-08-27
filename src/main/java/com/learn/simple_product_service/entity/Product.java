@@ -1,13 +1,17 @@
 package com.learn.simple_product_service.entity;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -49,4 +53,12 @@ public class Product {
 	@Builder.Default
 	@Column(name = "from_approval", nullable = false)
 	private boolean fromApproval = false;
+	
+	@ElementCollection
+	@CollectionTable(
+	    name = "product_image_urls",
+	    joinColumns = @JoinColumn(name = "product_id")
+	)
+	@Column(name = "image_urls", nullable = false)
+	private List<String> imageUrls;
 }
